@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Тест на AI-зрелость для HR</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f0f0f; --surface: #1a1a1a; --surface2: #222; --border: #2e2e2e;
+    --text: #f0f0f0; --muted: #888; --accent: #c8f04d;
+    --correct: #4ddbaf; --correct-dim: rgba(77,219,175,0.12);
+    --wrong: #ff6b6b; --wrong-dim: rgba(255,107,107,0.12); --radius: 10px;
+  }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 2rem 1rem 4rem; }
+  .container { width: 100%; max-width: 600px; }
+  .header { margin-bottom: 2.5rem; padding-top: 1rem; }
+  .header-tag { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--accent); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 10px; }
+  h1 { font-size: clamp(1.6rem, 5vw, 2.2rem); font-weight: 600; line-height: 1.2; color: var(--text); margin-bottom: 8px; }
+  .header-sub { font-size: 14px; color: var(--muted); font-family: 'DM Mono', monospace; }
+  .progress-wrap { margin-bottom: 2rem; }
+  .progress-meta { display: flex; justify-content: space-between; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+  .progress-track { height: 2px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 99px; transition: width 0.4s ease; }
+  .q-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1rem; }
+  .q-label { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 12px; }
+  .q-text { font-size: 16px; font-weight: 500; line-height: 1.5; color: var(--text); margin-bottom: 1.25rem; }
+  .opts { display: flex; flex-direction: column; gap: 8px; }
+  .opt { display: flex; align-items: flex-start; gap: 12px; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; font-size: 14px; color: var(--text); background: var(--surface2); transition: border-color 0.15s, background 0.15s; line-height: 1.4; text-align: left; }
+  .opt:hover { border-color: #444; background: #2a2a2a; }
+  .opt-key { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--accent); min-width: 16px; margin-top: 1px; flex-shrink: 0; }
+  .opt.selected { border-color: var(--accent); background: rgba(200,240,77,0.08); }
+  .opt.selected .opt-key { color: var(--accent); }
+  .opt.confirmed-correct { border-color: var(--correct); background: var(--correct-dim); }
+  .opt.confirmed-correct .opt-key { color: var(--correct); }
+  .opt.confirmed-wrong { border-color: var(--wrong); background: var(--wrong-dim); }
+  .opt.confirmed-wrong .opt-key { color: var(--wrong); }
+  .hint-box { margin-top: 12px; padding: 10px 14px; border-radius: 8px; font-size: 13px; font-family: 'DM Mono', monospace; line-height: 1.6; display: none; border: 1px solid var(--border); color: var(--muted); background: var(--surface2); }
+  .next-btn { width: 100%; padding: 13px; border-radius: var(--radius); border: 1px solid var(--accent); background: transparent; color: var(--accent); font-family: 'DM Mono', monospace; font-size: 13px; cursor: pointer; margin-top: 1rem; display: none; transition: background 0.15s, color 0.15s; }
+  .next-btn:hover { background: var(--accent); color: var(--bg); }
+  .result-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem 1.5rem; text-align: center; }
+  .result-emoji { font-size: 52px; margin-bottom: 1rem; line-height: 1; }
+  .result-title { font-size: 26px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .result-score { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--accent); margin-bottom: 1rem; }
+  .result-desc { font-size: 14px; color: var(--muted); font-family: 'DM Mono', monospace; line-height: 1.7; max-width: 440px; margin: 0 auto 1.5rem; }
+  .result-steps { border-top: 1px solid var(--border); padding-top: 1.5rem; display: flex; flex-direction: column; gap: 12px; text-align: left; }
+  .result-step { display: flex; gap: 12px; align-items: flex-start; }
+  .step-num { color: var(--accent); min-width: 18px; font-size: 13px; font-family: 'DM Mono', monospace; flex-shrink: 0; }
+  .step-text { color: var(--text); font-size: 13px; font-family: 'DM Mono', monospace; line-height: 1.5; }
+  .result-smile { display: flex; gap: 12px; align-items: flex-start; border-top: 1px solid var(--border); padding-top: 12px; margin-top: 4px; }
+  .btn-row { display: flex; gap: 10px; margin-top: 1.5rem; justify-content: center; flex-wrap: wrap; }
+  .btn-ghost { padding: 10px 22px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 12px; cursor: pointer; }
+  .btn-ghost:hover { border-color: #555; color: var(--text); }
+  .btn-accent { padding: 10px 22px; border-radius: 8px; border: 1px solid var(--accent); background: transparent; color: var(--accent); font-family: 'DM Mono', monospace; font-size: 12px; cursor: pointer; }
+  .btn-accent:hover { background: var(--accent); color: var(--bg); }
+  @media (max-width: 480px) { .q-card { padding: 1.25rem; } h1 { font-size: 1.5rem; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-tag">🧠 Тест на AI-зрелость для HR</div>
+    <h1>Насколько глубоко вы уже в AI?</h1>
+    <div class="header-sub">Вопросы — практичные. Результаты — немного шуточные.</div>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-meta">
+      <span id="prog-label">Question 1 of 10</span>
+      <span id="score-label"></span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progress" style="width:10%"></div></div>
+  </div>
+  <div id="q-container"></div>
+</div>
+<script>
+const questions = [
+  { text: "Ты слышал(а) о правиле RCJF?", opts: ["Да, я его использую", "Слышал(а), но не уверен(а) что это", "Что-то знакомое", "Это про HR-compliance?"], scores: [3,2,1,0], hint: "Role + Context + Job + Format — базовая формула рабочего промпта." },
+  { text: "Ты настраивал(а) кастомные инструкции в своём AI?", opts: ["Да, несколько разных настроек", "Да, один раз", "Кажется, да", "Я просто пишу «улучши это»"], scores: [3,2,1,0], hint: "Один раз настроил — меньше пишешь в каждом запросе." },
+  { text: "У тебя есть платная подписка на AI?", opts: ["Да, больше одной", "Да", "Планирую", "Бесплатная версия работает… в основном"], scores: [3,2,1,0], hint: "Бесплатный тариф заканчивается в самый нужный момент." },
+  { text: "Контекстное окно — это:", opts: ["Лимит памяти модели", "История чата", "Что-то техническое", "Окно чата"], scores: [3,2,1,0], hint: "Когда лимит заканчивается — AI забывает начало диалога." },
+  { text: "У тебя есть GitHub?", opts: ["Да, там что-то есть", "Да, пустой", "Регистрировался(ась) однажды", "Это для разработчиков"], scores: [3,2,1,0], hint: "Там удобно хранить скрипты, ботов и «что я построил вчера»." },
+  { text: "Railway / Vercel / Render — ты:", opts: ["Хостишь там проекты", "Смотрел(а) туториалы", "Знаешь названия", "Звучит как логистика"], scores: [3,2,1,0], hint: "Иначе бот работает только пока открыт ваш ноутбук." },
+  { text: "Ты устанавливал(а) Cursor / AI IDE?", opts: ["Да, пользуюсь", "Установил(а), боюсь", "Планирую", "Я HR, зачем мне это"], scores: [3,2,1,0], hint: "Cursor позволяет строить ботов без умения программировать." },
+  { text: "Ты что-то построил(а) с помощью AI?", opts: ["Бот / ассистент", "Автоматизацию", "Библиотеку промптов", "Пока только список того, что надо построить"], scores: [3,2,1,0], hint: "Первый работающий бот меняет отношение к AI навсегда." },
+  { text: "Твои расходы на AI в месяц:", opts: ["Несколько подписок, я уже сбился(ась) со счёта", "ChatGPT + ещё один инструмент", "Один платный инструмент", "Бесплатный план + мотивация"], scores: [3,2,1,0], hint: "Мотивация не открывает платные модели 🙂" },
+  { text: "API-ключ — это:", opts: ["То, что я уже использовал(а)", "Видел(а) в туториалах", "Звучит технично, но важно", "Не знаю"], scores: [3,2,1,0], hint: "Первый шаг к подключению AI к реальным процессам." }
+];
+
+// Shuffle options but keep scores linked
+function shuffleQuestion(q) {
+  const indices = [0,1,2,3];
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+  return {
+    text: q.text,
+    hint: q.hint,
+    opts: indices.map(i => q.opts[i]),
+    scores: indices.map(i => q.scores[i])
+  };
+}
+
+const shuffled = questions.map(shuffleQuestion);
+
+const levels = [
+  { min:0, max:7, emoji:"🪨", title:"Каменный век HR", desc:"Используешь AI как Google.\nКопируешь вручную.\nИногда говоришь «AI переоценён».\nAI пока просто помогает переписать письмо." },
+  { min:8, max:14, emoji:"☕", title:"HR «на потом»", desc:"Читаешь посты про AI.\nСохраняешь.\nОбязательно попробуешь.\nПапка называется «AI штуки»." },
+  { min:15, max:20, emoji:"🧩", title:"HR — коллекционер промптов", desc:"У тебя есть промпты.\nТы их дорабатываешь.\nИногда пугаешь коллег словом «контекст».\nДо автоматизации — один вебхук." },
+  { min:21, max:26, emoji:"🤖", title:"HR — случайный автоматизатор", desc:"Однажды что-то построил(а).\nСработало.\nТеперь ты AI-человек в команде.\nТы уже не сопротивляешься." },
+  { min:27, max:30, emoji:"🚀", title:"HR-инженер", desc:"Что ты вообще тут делаешь?\nИди уже запускать свой стартап.\nHR — просто твой pet-project теперь." }
+];
+
+let current = 0, score = 0, answered = new Array(10).fill(null), selected = new Array(10).fill(null);
+function getLevel(s) { return levels.find(l => s >= l.min && s <= l.max); }
+
+function render() {
+  if (current >= shuffled.length) { showResult(); return; }
+  const q = shuffled[current];
+  document.getElementById('progress').style.width = Math.max((current / shuffled.length * 100), 10) + '%';
+  document.getElementById('prog-label').textContent = `Вопрос ${current + 1} из ${shuffled.length}`;
+  document.getElementById('score-label').textContent = score > 0 ? score + ' pts' : '';
+  const keys = ['A','B','C','D'];
+  const optsHtml = q.opts.map((o,i) => `<div class="opt" onclick="choose(${i})" id="opt-${i}"><span class="opt-key">${keys[i]}</span><span>${o}</span></div>`).join('');
+  document.getElementById('q-container').innerHTML = `
+    <div class="q-card">
+      <div class="q-label">ВОПРОС ${current + 1}</div>
+      <div class="q-text">${q.text}</div>
+      <div class="opts">${optsHtml}</div>
+      <div class="hint-box" id="hint"></div>
+    </div>
+    <button class="next-btn" id="next-btn" onclick="confirmAndNext()">${current === shuffled.length - 1 ? 'Посмотреть результат →' : 'Далее →'}</button>`;
+
+  // Restore selection if navigated back (not used here but safe)
+  if (selected[current] !== null) {
+    document.getElementById('opt-' + selected[current]).classList.add('selected');
+    document.getElementById('next-btn').style.display = 'block';
+  }
+}
+
+function choose(idx) {
+  if (answered[current] !== null) return; // already confirmed
+  const keys = ['A','B','C','D'];
+  // Clear previous selection
+  keys.forEach((_,i) => {
+    const el = document.getElementById('opt-' + i);
+    if (el) el.className = 'opt';
+  });
+  selected[current] = idx;
+  document.getElementById('opt-' + idx).classList.add('selected');
+  document.getElementById('next-btn').style.display = 'block';
+}
+
+function confirmAndNext() {
+  const idx = selected[current];
+  if (idx === null) return;
+  if (answered[current] === null) {
+    const q = shuffled[current];
+    const pts = q.scores[idx];
+    score += pts;
+    answered[current] = idx;
+    document.getElementById('score-label').textContent = score + ' pts';
+    // Show hint (no coloring)
+    const hint = document.getElementById('hint');
+    hint.textContent = q.hint;
+    hint.style.display = 'block';
+    // Disable further clicking
+    [0,1,2,3].forEach(i => {
+      const el = document.getElementById('opt-' + i);
+      if (el) el.style.pointerEvents = 'none';
+    });
+    // Change button text to proceed
+    document.getElementById('next-btn').textContent = current === shuffled.length - 1 ? 'Посмотреть результат →' : 'Далее →';
+    // Small delay then go next
+    setTimeout(() => { current++; render(); }, 800);
+  }
+}
+
+function showResult() {
+  document.getElementById('progress').style.width = '100%';
+  document.getElementById('prog-label').textContent = 'Готово!';
+  document.getElementById('score-label').textContent = score + ' / 30';
+  const lv = getLevel(score);
+  const titleEsc = lv.title.replace(/'/g, "\\'");
+  const descHtml = lv.desc.split('\n').map(line => `<div>${line}</div>`).join('');
+  document.getElementById('q-container').innerHTML = `
+    <div class="result-card">
+      <div class="result-emoji">${lv.emoji}</div>
+      <div class="result-title">${lv.title}</div>
+      <div class="result-score">${score} / 30 pts</div>
+      <div class="result-desc">${descHtml}</div>
+      <div class="btn-row">
+        <button class="btn-ghost" onclick="restart()">Попробовать снова</button>
+        <button class="btn-accent" id="copy-btn" onclick="copyScore('${titleEsc}', ${score})">Скопировать результат</button>
+      </div>
+    </div>`;
+}
+
+function copyScore(title, pts) {
+  navigator.clipboard.writeText(`Мой результат: «${title}» — ${pts}/30 в тесте на AI-зрелость для HR 🤖`).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = 'Скопировано!';
+    setTimeout(() => btn.textContent = 'Скопировать результат', 2000);
+  });
+}
+
+function restart() { current = 0; score = 0; answered = new Array(10).fill(null); selected = new Array(10).fill(null); render(); }
+render();
+</script>
+</body>
+</html>
