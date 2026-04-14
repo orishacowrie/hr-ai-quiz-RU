@@ -170,10 +170,10 @@ function confirmAndNext() {
       const el = document.getElementById('opt-' + i);
       if (el) el.style.pointerEvents = 'none';
     });
-    // Change button text to proceed
-    document.getElementById('next-btn').textContent = current === shuffled.length - 1 ? 'Посмотреть результат →' : 'Далее →';
-    // Small delay then go next
-    setTimeout(() => { current++; render(); }, 800);
+    // Update button to advance
+    const btn = document.getElementById('next-btn');
+    btn.textContent = current === shuffled.length - 1 ? 'Посмотреть результат →' : 'Далее →';
+    btn.onclick = () => { current++; render(); };
   }
 }
 
